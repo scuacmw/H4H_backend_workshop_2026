@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Users</title>
+  <style>
+    body { font-family: system-ui; max-width: 400px; margin: 2rem auto; padding: 0 1rem; }
+    .user { background: #eee; padding: 0.5rem; margin: 0.25rem 0; }
+    form { margin-bottom: 1rem; }
+    input { padding: 0.5rem; margin-right: 0.5rem; }
+  </style>
+</head>
+<body>
+  <h1>Users</h1>
+  <form id="form">
+    <input type="text" name="my_data" placeholder="Name" required>
+    <button type="submit">Add</button>
+  </form>
+  <div id="list">Loading…</div>
+
+  <script>
+    var list = document.getElementById('list');
+    var form = document.getElementById('form');
+
+    function load() {
+      fetch('/getUsers')
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+          if (data.error || !Array.isArray(data) || !data.length) {
+            list.textContent = 'No users.';
+            return;
+          }
+          list.innerHTML = data.map(function(u) {
+            return '<div class="user">' + (u.content != null ? u.content : JSON.stringify(u)) + '</div>';
+          }).join('');
+        })
+        .catch(function() { list.textContent = 'Error loading.'; });
+    }
+
+    form.onsubmit = function(e) {
+      e.preventDefault();
+      var fd = new FormData(form);
+      if (!fd.get('my_data') || !fd.get('my_data').trim()) return;
+      fetch('/addUsers', {
+        method: 'POST',
+        body: fd
+      })
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+          form.my_data.value = '';
+          load();
+        })
+        .catch(function() { alert('Failed to add.'); });
+    };
+
+    load();
+  </script>
+</body>
+</html>
